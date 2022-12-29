@@ -1,0 +1,5 @@
+#Not Upload File node_modules
+/node_modules
+
+#Not Upload File env
+.env
