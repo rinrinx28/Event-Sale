@@ -3,8 +3,6 @@ require("dotenv").config();
 const { ethers, utils } = require("ethers");
 const chalk = require("chalk");
 var CryptoJS = require("crypto-js");
-const mongoose = require("mongoose");
-const { trades_data } = require("./schema/schema-type");
 
 var looksrares = chalk.hex("#66FF00");
 var blurs = chalk.hex("#FFAC1C");
@@ -28,26 +26,13 @@ const provider = new ethers.providers.InfuraProvider(
 );
 
 var db = createConnection(mysql_config_new);
-// db.connect(function (err) {
-//   if (err) {
-//     console.log("error connecting: " + err.stack);
-//     return;
-//   }
-//   console.log(`Connected as id ${db.threadId}`);
-// });
-
-mongoose.set("strictQuery", true);
-mongoose
-  .connect(process.env.mongoose, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => {
-    console.log("Đã kết nối với DB");
-  })
-  .catch((err) => {
-    console.log(err);
-  });
+db.connect(function (err) {
+  if (err) {
+    console.log("error connecting: " + err.stack);
+    return;
+  }
+  console.log(`Connected as id ${db.threadId}`);
+});
 
 //* ———————————————[Config Marketplace]———————————————
 var seaport = "0x00000000006c3852cbEf3e08E8dF289169EdE581"; // Contract Opensea Seaport 1.1
@@ -109,290 +94,290 @@ const x2y2 = {
   ],
 };
 
-// provider.addListener(blur, (log, event) => {
-//   const blur_abi = require("./abi/blur2.json");
-//   const abi = blur_abi
-//     .filter((v) => v.type === "event")
-//     .filter((v) => v.name === "OrdersMatched");
-//   let iface = new ethers.utils.Interface(abi);
-//   let data = log.data;
-//   let topics = log.topics;
-//   let { maker, taker, sell, sellHash, buy, buyHash } = iface.decodeEventLog(
-//     "OrdersMatched",
-//     data,
-//     topics,
-//   );
-//   let id = `${parseInt(sell.tokenId._hex, 16)}/` + `${log.transactionHash}`;
-//   var id_encrypted = CryptoJS.AES.encrypt(id, secretkeyHash).toString();
-//   let eth = "0x0000000000000000000000000000000000000000";
-//   let weth = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
-//   let contract = sell.collection;
-//   let tokenid = parseInt(sell.tokenId._hex, 16);
-//   let amount = parseInt(sell.amount._hex, 16);
-//   let price = parseInt(sell.price._hex, 16);
-//   let token_payment =
-//     sell.paymentToken === eth
-//       ? "ETH"
-//       : sell.paymentToken === weth
-//       ? "WETH"
-//       : sell.paymentToken;
-//   let txhash = log.transactionHash;
-//   let blockNumber = log.blockNumber;
-//   if (tokenid < 1e9) {
-//     updateTrades(
-//       id_encrypted,
-//       maker,
-//       taker,
-//       contract,
-//       tokenid,
-//       amount,
-//       price,
-//       token_payment,
-//       txhash,
-//       blockNumber,
-//       "Blur",
-//     ).then((n) => {
-//       console.log(n);
-//     });
-//   } else {
-//     console.log(`${blurs(`[Blur Trade]`)} Not Update Token : ${tokenid}`);
-//   }
-// });
-
-// provider.addListener(seaports, (log, event) => {
-//   const ops_abi = require("./abi/seaport.json");
-//   const abi = ops_abi
-//     .filter((v) => v.type === "event")
-//     .filter((v) => v.name === "OrderFulfilled");
-//   let iface = new ethers.utils.Interface(abi);
-//   let data = log.data;
-//   let topics = log.topics;
-//   let price_sale = [];
-//   let price_token = "";
-//   let tokenId_type = 0;
-//   let contract_type = "true";
-//   let amount = 0;
-//   let { orderHash, offerer, zone, recipient, offer, consideration } =
-//     iface.decodeEventLog("OrderFulfilled", data, topics);
-//   /**
-//    * Offer ItemType: 1 = Other Token | 3 = TokenID
-//    * Consideration ItemType: 0 = ETH |  1 = Order Token Price | 2 = TokenID
-//    */
-//   offer.map((v) => {
-//     if (v.itemType === 3) {
-//       if (parseInt(v.identifier._hex, 16) < 1e9) {
-//         tokenId_type = parseInt(v.identifier._hex, 16);
-//         contract_type = `${v.token}`;
-//         amount = parseInt(v.amount._hex, 16);
-//       } else {
-//         contract_type = "false";
-//       }
-//     } else if (v.itemType === 1) {
-//       price_sale.push(parseInt(v.amount._hex, 16));
-//       price_token =
-//         v.token === "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-//           ? "WETH"
-//           : v.token;
-//     } else {
-//       if (parseInt(v.identifier._hex, 16) < 1e9) {
-//         tokenId_type = parseInt(v.identifier._hex, 16);
-//         contract_type = `${v.token}`;
-//         amount = parseInt(v.amount._hex, 16);
-//       } else {
-//         contract_type = "false";
-//       }
-//     }
-//   });
-//   consideration.map((v) => {
-//     if (contract_type === "false") return;
-//     if (v.itemType === 0) {
-//       price_sale.push(parseInt(v.amount._hex, 16));
-//       price_token = "ETH";
-//     } else if (v.itemType === 1) {
-//       if (price_sale.length < 1) {
-//         price_sale.push(parseInt(v.amount._hex, 16));
-//         price_token =
-//           v.token === "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-//             ? "WETH"
-//             : v.token;
-//       }
-//     } else if (v.itemType === 2) {
-//       tokenId_type = parseInt(v.identifier._hex, 16);
-//       contract_type = `${v.token}`;
-//       amount = parseInt(v.amount._hex, 16);
-//     } else if (v.itemType === 3) {
-//       if (parseInt(v.identifier._hex, 16) < 1e9) {
-//         tokenId_type = parseInt(v.identifier._hex, 16);
-//         contract_type = `${v.token}`;
-//         amount = parseInt(v.amount._hex, 16);
-//       } else {
-//         contract_type = "false";
-//         console.log(`${opensea("[Opensea Trade]")} Consideration Type 3`, v);
-//       }
-//     } else {
-//       console.log(`${opensea("[Opensea Trade]")} Consideration`, v);
-//     }
-//   });
-//   let price = price_sale.reduce((a, b) => a + b, 0);
-//   let blocknumber = log.blockNumber;
-//   if (contract_type === "false") {
-//     console.log(
-//       `${opensea("[Opensea Trade]")} Not Update Trades ${log.transactionHash}`,
-//     );
-//   } else {
-//     let id = `${tokenId_type}/` + `${log.transactionHash}`;
-//     var id_encrypted = CryptoJS.AES.encrypt(id, secretkeyHash).toString();
-//     var maker = offerer;
-//     var taker = recipient;
-//     var contract = contract_type;
-//     var tokenid = tokenId_type;
-//     var price_db = price;
-//     var token_payment = price_token;
-//     var txhash = log.transactionHash;
-//     if (contract === "0x0000000000000000000000000000000000000000") {
-//       let datas = iface.decodeEventLog("OrderFulfilled", data, topics);
-//       console.log(datas);
-//     } else {
-//       updateTrades(
-//         id_encrypted,
-//         maker,
-//         taker,
-//         contract,
-//         tokenid,
-//         amount,
-//         price_db,
-//         token_payment,
-//         txhash,
-//         blocknumber,
-//         "Opensea",
-//       ).then((n) => {
-//         console.log(n);
-//       });
-//     }
-//   }
-// });
-
-// provider.addListener(TakeArk, (log, event) => {
-//   const ask_abi = require("./abi/looksrare.json");
-//   const abi = ask_abi
-//     .filter((v) => v.type === "event")
-//     .filter((v) => v.name === "TakerAsk");
-//   let iface = new ethers.utils.Interface(abi);
-//   let data = log.data;
-//   let topics = log.topics;
-//   let {
-//     orderHash,
-//     orderNonce,
-//     taker,
-//     maker,
-//     strategy,
-//     currency,
-//     collection,
-//     tokenId,
-//     amount,
-//     price,
-//   } = iface.decodeEventLog("TakerAsk", data, topics);
-//   if (parseInt(tokenId._hex, 16) < 1e9) {
-//     let blockNumber = log.blockNumber;
-//     let id = `${parseInt(tokenId._hex, 16)}/` + `${log.transactionHash}`;
-//     var id_encrypted = CryptoJS.AES.encrypt(id, secretkeyHash).toString();
-//     var contract = collection;
-//     var tokenid = parseInt(tokenId._hex, 16);
-//     var price_db = parseInt(price._hex, 16);
-//     var token_payment =
-//       currency === "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-//         ? "WETH"
-//         : currency;
-//     var amount_db = parseInt(amount._hex, 16);
-//     var txhash = log.transactionHash;
-//     updateTrades(
-//       id_encrypted,
-//       maker,
-//       taker,
-//       contract,
-//       tokenId,
-//       amount_db,
-//       price_db,
-//       token_payment,
-//       txhash,
-//       blockNumber,
-//       "LooksRare",
-//     ).then((n) => {
-//       console.log(n);
-//     });
-//   } else {
-//     console.log(
-//       `${looksrares(`[LooksRare Trade TakerAsk]`)} Not Update - Txhash: ${
-//         log.transactionHash
-//       }`,
-//     );
-//   }
-// });
-
-// provider.addListener(TakeBid, (log, event) => {
-//   const bid_abi = require("./abi/looksrare.json");
-//   const abi = bid_abi
-//     .filter((v) => v.type === "event")
-//     .filter((v) => v.name === "TakerBid");
-//   let iface = new ethers.utils.Interface(abi);
-//   let data = log.data;
-//   let topics = log.topics;
-//   let {
-//     orderHash,
-//     orderNonce,
-//     taker,
-//     maker,
-//     strategy,
-//     currency,
-//     collection,
-//     tokenId,
-//     amount,
-//     price,
-//   } = iface.decodeEventLog("TakerBid", data, topics);
-//   if (parseInt(tokenId._hex, 16) < 1e9) {
-//     let blockNumber = log.blockNumber;
-//     let id = `${parseInt(tokenId._hex, 16)}/` + `${log.transactionHash}`;
-//     var id_encrypted = CryptoJS.AES.encrypt(id, secretkeyHash).toString();
-//     var contract = collection;
-//     var tokenid = parseInt(tokenId._hex, 16);
-//     var price_db = parseInt(price._hex, 16);
-//     var token_payment =
-//       currency === "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-//         ? "WETH"
-//         : currency;
-//     var amount_db = parseInt(amount._hex, 16);
-//     var txhash = log.transactionHash;
-//     updateTrades(
-//       id_encrypted,
-//       maker,
-//       taker,
-//       contract,
-//       tokenId,
-//       amount_db,
-//       price_db,
-//       token_payment,
-//       txhash,
-//       blockNumber,
-//       "LooksRare",
-//     ).then((n) => {
-//       console.log(n);
-//     });
-//   } else {
-//     console.log(
-//       `${looksrares(`[LooksRare Trade TakerBid]`)} Not Update - Txhash: ${
-//         log.transactionHash
-//       }`,
-//     );
-//   }
-// });
-
-provider.addListener(x2y2, async (log, event) => {
-  const x2y2_abi = require("./abi/x2y2.json");
-  const abi = x2y2_abi.filter((n) => n.name === "EvInventory");
+provider.addListener(blur, (log, event) => {
+  const blur_abi = require("./abi/blur2.json");
+  const abi = blur_abi
+    .filter((v) => v.type === "event")
+    .filter((v) => v.name === "OrdersMatched");
   let iface = new ethers.utils.Interface(abi);
-  let data = iface.decodeEventLog("EvInventory", log.data, log.topics);
-  console.log(data.detail, data.detail.fees, data, log.transactionHash);
+  let data = log.data;
+  let topics = log.topics;
+  let { maker, taker, sell, sellHash, buy, buyHash } = iface.decodeEventLog(
+    "OrdersMatched",
+    data,
+    topics,
+  );
+  let id = `${parseInt(sell.tokenId._hex, 16)}/` + `${log.transactionHash}`;
+  var id_encrypted = CryptoJS.AES.encrypt(id, secretkeyHash).toString();
+  let eth = "0x0000000000000000000000000000000000000000";
+  let weth = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
+  let contract = sell.collection;
+  let tokenid = parseInt(sell.tokenId._hex, 16);
+  let amount = parseInt(sell.amount._hex, 16);
+  let price = parseInt(sell.price._hex, 16);
+  let token_payment =
+    sell.paymentToken === eth
+      ? "ETH"
+      : sell.paymentToken === weth
+      ? "WETH"
+      : sell.paymentToken;
+  let txhash = log.transactionHash;
+  let blockNumber = log.blockNumber;
+  if (tokenid < 1e9) {
+    updateTrades(
+      id_encrypted,
+      maker,
+      taker,
+      contract,
+      tokenid,
+      amount,
+      price,
+      token_payment,
+      txhash,
+      blockNumber,
+      "Blur",
+    ).then((n) => {
+      console.log(n);
+    });
+  } else {
+    console.log(`${blurs(`[Blur Trade]`)} Not Update Token : ${tokenid}`);
+  }
 });
+
+provider.addListener(seaports, (log, event) => {
+  const ops_abi = require("./abi/seaport.json");
+  const abi = ops_abi
+    .filter((v) => v.type === "event")
+    .filter((v) => v.name === "OrderFulfilled");
+  let iface = new ethers.utils.Interface(abi);
+  let data = log.data;
+  let topics = log.topics;
+  let price_sale = [];
+  let price_token = "";
+  let tokenId_type = 0;
+  let contract_type = "true";
+  let amount = 0;
+  let { orderHash, offerer, zone, recipient, offer, consideration } =
+    iface.decodeEventLog("OrderFulfilled", data, topics);
+  /**
+   * Offer ItemType: 1 = Other Token | 3 = TokenID
+   * Consideration ItemType: 0 = ETH |  1 = Order Token Price | 2 = TokenID
+   */
+  offer.map((v) => {
+    if (v.itemType === 3) {
+      if (parseInt(v.identifier._hex, 16) < 1e9) {
+        tokenId_type = parseInt(v.identifier._hex, 16);
+        contract_type = `${v.token}`;
+        amount = parseInt(v.amount._hex, 16);
+      } else {
+        contract_type = "false";
+      }
+    } else if (v.itemType === 1) {
+      price_sale.push(parseInt(v.amount._hex, 16));
+      price_token =
+        v.token === "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+          ? "WETH"
+          : v.token;
+    } else {
+      if (parseInt(v.identifier._hex, 16) < 1e9) {
+        tokenId_type = parseInt(v.identifier._hex, 16);
+        contract_type = `${v.token}`;
+        amount = parseInt(v.amount._hex, 16);
+      } else {
+        contract_type = "false";
+      }
+    }
+  });
+  consideration.map((v) => {
+    if (contract_type === "false") return;
+    if (v.itemType === 0) {
+      price_sale.push(parseInt(v.amount._hex, 16));
+      price_token = "ETH";
+    } else if (v.itemType === 1) {
+      if (price_sale.length < 1) {
+        price_sale.push(parseInt(v.amount._hex, 16));
+        price_token =
+          v.token === "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+            ? "WETH"
+            : v.token;
+      }
+    } else if (v.itemType === 2) {
+      tokenId_type = parseInt(v.identifier._hex, 16);
+      contract_type = `${v.token}`;
+      amount = parseInt(v.amount._hex, 16);
+    } else if (v.itemType === 3) {
+      if (parseInt(v.identifier._hex, 16) < 1e9) {
+        tokenId_type = parseInt(v.identifier._hex, 16);
+        contract_type = `${v.token}`;
+        amount = parseInt(v.amount._hex, 16);
+      } else {
+        contract_type = "false";
+        console.log(`${opensea("[Opensea Trade]")} Consideration Type 3`, v);
+      }
+    } else {
+      console.log(`${opensea("[Opensea Trade]")} Consideration`, v);
+    }
+  });
+  let price = price_sale.reduce((a, b) => a + b, 0);
+  let blocknumber = log.blockNumber;
+  if (contract_type === "false") {
+    console.log(
+      `${opensea("[Opensea Trade]")} Not Update Trades ${log.transactionHash}`,
+    );
+  } else {
+    let id = `${tokenId_type}/` + `${log.transactionHash}`;
+    var id_encrypted = CryptoJS.AES.encrypt(id, secretkeyHash).toString();
+    var maker = offerer;
+    var taker = recipient;
+    var contract = contract_type;
+    var tokenid = tokenId_type;
+    var price_db = price;
+    var token_payment = price_token;
+    var txhash = log.transactionHash;
+    if (contract === "0x0000000000000000000000000000000000000000") {
+      let datas = iface.decodeEventLog("OrderFulfilled", data, topics);
+      console.log(datas);
+    } else {
+      updateTrades(
+        id_encrypted,
+        maker,
+        taker,
+        contract,
+        tokenid,
+        amount,
+        price_db,
+        token_payment,
+        txhash,
+        blocknumber,
+        "Opensea",
+      ).then((n) => {
+        console.log(n);
+      });
+    }
+  }
+});
+
+provider.addListener(TakeArk, (log, event) => {
+  const ask_abi = require("./abi/looksrare.json");
+  const abi = ask_abi
+    .filter((v) => v.type === "event")
+    .filter((v) => v.name === "TakerAsk");
+  let iface = new ethers.utils.Interface(abi);
+  let data = log.data;
+  let topics = log.topics;
+  let {
+    orderHash,
+    orderNonce,
+    taker,
+    maker,
+    strategy,
+    currency,
+    collection,
+    tokenId,
+    amount,
+    price,
+  } = iface.decodeEventLog("TakerAsk", data, topics);
+  if (parseInt(tokenId._hex, 16) < 1e9) {
+    let blockNumber = log.blockNumber;
+    let id = `${parseInt(tokenId._hex, 16)}/` + `${log.transactionHash}`;
+    var id_encrypted = CryptoJS.AES.encrypt(id, secretkeyHash).toString();
+    var contract = collection;
+    var tokenid = parseInt(tokenId._hex, 16);
+    var price_db = parseInt(price._hex, 16);
+    var token_payment =
+      currency === "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+        ? "WETH"
+        : currency;
+    var amount_db = parseInt(amount._hex, 16);
+    var txhash = log.transactionHash;
+    updateTrades(
+      id_encrypted,
+      maker,
+      taker,
+      contract,
+      tokenId,
+      amount_db,
+      price_db,
+      token_payment,
+      txhash,
+      blockNumber,
+      "LooksRare",
+    ).then((n) => {
+      console.log(n);
+    });
+  } else {
+    console.log(
+      `${looksrares(`[LooksRare Trade TakerAsk]`)} Not Update - Txhash: ${
+        log.transactionHash
+      }`,
+    );
+  }
+});
+
+provider.addListener(TakeBid, (log, event) => {
+  const bid_abi = require("./abi/looksrare.json");
+  const abi = bid_abi
+    .filter((v) => v.type === "event")
+    .filter((v) => v.name === "TakerBid");
+  let iface = new ethers.utils.Interface(abi);
+  let data = log.data;
+  let topics = log.topics;
+  let {
+    orderHash,
+    orderNonce,
+    taker,
+    maker,
+    strategy,
+    currency,
+    collection,
+    tokenId,
+    amount,
+    price,
+  } = iface.decodeEventLog("TakerBid", data, topics);
+  if (parseInt(tokenId._hex, 16) < 1e9) {
+    let blockNumber = log.blockNumber;
+    let id = `${parseInt(tokenId._hex, 16)}/` + `${log.transactionHash}`;
+    var id_encrypted = CryptoJS.AES.encrypt(id, secretkeyHash).toString();
+    var contract = collection;
+    var tokenid = parseInt(tokenId._hex, 16);
+    var price_db = parseInt(price._hex, 16);
+    var token_payment =
+      currency === "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+        ? "WETH"
+        : currency;
+    var amount_db = parseInt(amount._hex, 16);
+    var txhash = log.transactionHash;
+    updateTrades(
+      id_encrypted,
+      maker,
+      taker,
+      contract,
+      tokenId,
+      amount_db,
+      price_db,
+      token_payment,
+      txhash,
+      blockNumber,
+      "LooksRare",
+    ).then((n) => {
+      console.log(n);
+    });
+  } else {
+    console.log(
+      `${looksrares(`[LooksRare Trade TakerBid]`)} Not Update - Txhash: ${
+        log.transactionHash
+      }`,
+    );
+  }
+});
+
+// provider.addListener(x2y2, async (log, event) => {
+//   const x2y2_abi = require("./abi/x2y2.json");
+//   const abi = x2y2_abi.filter((n) => n.name === "EvInventory");
+//   let iface = new ethers.utils.Interface(abi);
+//   let data = iface.decodeEventLog("EvInventory", log.data, log.topics);
+//   console.log(data.detail, data.detail.fees, data, log.transactionHash);
+// });
 
 async function updateTrades(
   id,
@@ -408,39 +393,35 @@ async function updateTrades(
   marketplace,
 ) {
   return await new Promise(async (res, rej) => {
-    await trades_data.findOneAndUpdate(
-      {
-        id: id,
-      },
-      {
-        $set: {
-          id: id,
-          maker: maker,
-          taker: taker,
-          contract: contract,
-          tokenid: tokenid,
-          amount: amount,
-          price_sale: price_sale,
-          price_token: price_token,
-          txhash: txhash,
-          blocknumber: blocknumber,
-          marketplace: marketplace,
-        },
-      },
-      {
-        upsert: true,
-        new: true,
-      },
-    );
-    res(
-      `${
-        marketplace === "Opensea"
-          ? opensea("[Opensea Trade]")
-          : marketplace === "Blur"
-          ? blurs("[Blur Trade]")
-          : looksrares("[LooksRare Trade]")
-      } TokenId : ${tokenid} - Price: ${price_sale} - TxHash: ${txhash}`,
-    );
+    var query = `insert into trades_data values ('${id}','${maker}','${taker}','${contract}','${tokenid}','${amount}','${price_sale}','${price_token}','${txhash}','${blocknumber}','${marketplace}')`;
+    db.beginTransaction(function (err) {
+      if (err) {
+        throw rej(err);
+      }
+      db.query(query, function (error, results, fields) {
+        if (error) {
+          return db.rollback(function () {
+            throw rej(error);
+          });
+        }
+        db.commit(function (err) {
+          if (err) {
+            return db.rollback(function () {
+              throw rej(err);
+            });
+          }
+          res(
+            `${
+              marketplace === "Opensea"
+                ? opensea("[Opensea Trade]")
+                : marketplace === "Blur"
+                ? blurs("[Blur Trade]")
+                : looksrares("[LooksRare Trade]")
+            } TokenId : ${tokenid} - Price: ${price_sale} - TxHash: ${txhash}`,
+          );
+        });
+      });
+    });
   });
 }
 
