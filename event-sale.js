@@ -406,8 +406,9 @@ async function updateTrades(
     JSON.stringify(body.metadata),
     secretkeyHash,
   ).toString();
+  var infoblock = await provider.getBlock(blocknumber);
   return await new Promise(async (res, rej) => {
-    var query = `insert into trades_data values ('${id}','${maker}','${taker}','${contract}','${tokenid}','${amount}','${price_sale}','${price_token}','${txhash}','${blocknumber}','${metadata}','${marketplace}') ON DUPLICATE KEY UPDATE id = Values(id)`;
+    var query = `insert into trades_data values ('${id}','${maker}','${taker}','${contract}','${tokenid}','${amount}','${price_sale}','${price_token}','${txhash}','${infoblock.timestamp}','${metadata}','${marketplace}') ON DUPLICATE KEY UPDATE id = Values(id)`;
     db.query(query, function (error, results, fields) {
       if (error) throw console.error("[Mysql Err]:", error);
       res(
