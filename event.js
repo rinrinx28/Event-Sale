@@ -3,6 +3,7 @@ require("dotenv").config();
 const { ethers, utils } = require("ethers");
 const chalk = require("chalk");
 var CryptoJS = require("crypto-js");
+const fetch = require("node-fetch");
 
 var looksrares = chalk.hex("#66FF00");
 var blurs = chalk.hex("#FFAC1C");
@@ -392,35 +393,32 @@ async function updateTrades(
   blocknumber,
   marketplace,
 ) {
+  // Get Info TokenId
+  var uri = `https://nft.api.infura.io/networks/1/nfts/${contract}/tokens/${tokenid}`;
+  const response = await fetch(uri, {
+    headers: {
+      accept: "application/json",
+      Authorization: "Basic " + process.env.basic + "=",
+    },
+  });
+  const body = await response.json();
+  const metadata = CryptoJS.AES.encrypt(
+    JSON.stringify(body.metadata),
+    secretkeyHash,
+  ).toString();
   return await new Promise(async (res, rej) => {
-    var query = `insert into trades_data values ('${id}','${maker}','${taker}','${contract}','${tokenid}','${amount}','${price_sale}','${price_token}','${txhash}','${blocknumber}','${marketplace}')`;
-    db.beginTransaction(function (err) {
-      if (err) {
-        throw rej(err);
-      }
-      db.query(query, function (error, results, fields) {
-        if (error) {
-          return db.rollback(function () {
-            throw rej(error);
-          });
-        }
-        db.commit(function (err) {
-          if (err) {
-            return db.rollback(function () {
-              throw rej(err);
-            });
-          }
-          res(
-            `${
-              marketplace === "Opensea"
-                ? opensea("[Opensea Trade]")
-                : marketplace === "Blur"
-                ? blurs("[Blur Trade]")
-                : looksrares("[LooksRare Trade]")
-            } TokenId : ${tokenid} - Price: ${price_sale} - TxHash: ${txhash}`,
-          );
-        });
-      });
+    var query = `insert into trades_data values ('${id}','${maker}','${taker}','${contract}','${tokenid}','${amount}','${price_sale}','${price_token}','${txhash}','${blocknumber}','${metadata}','${marketplace}') ON DUPLICATE KEY UPDATE id = Values(id)`;
+    db.query(query, function (error, results, fields) {
+      if (error) throw console.error("[Mysql Err]:", error);
+      res(
+        `${
+          marketplace === "Opensea"
+            ? opensea("[Opensea Trade]")
+            : marketplace === "Blur"
+            ? blurs("[Blur Trade]")
+            : looksrares("[LooksRare Trade]")
+        } TokenId : ${tokenid} - Price: ${price_sale} - TxHash: ${txhash}`,
+      );
     });
   });
 }
